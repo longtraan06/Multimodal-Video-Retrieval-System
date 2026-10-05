@@ -196,24 +196,48 @@ Instead of evaluating keyframes in isolation, the ingestion pipeline deploys a *
 <a id="43-global-temporal-reranking--sequence-relinking-formulation"></a>
 ### 4.3. Global Temporal Reranking & Sequence Relinking Formulation
 
-When querying consecutive actions (e.g., $Q_A: \text{"open door"} \rightarrow Q_B: \text{"walk out"} \rightarrow Q_C: \text{"drive away"}$), standard beam search or additive scoring often yields disjointed, temporally inconsistent frames. Our **Global Temporal Reranker** resolves this mathematically:
+When querying consecutive actions (e.g., `Event A: "open door"` &rarr; `Event B: "walk out"` &rarr; `Event C: "drive away"`), standard beam search or additive scoring often yields disjointed, temporally inconsistent frames. Our **Global Temporal Reranker** resolves this mathematically:
 
 #### Formalization
-Let hit sets for neighbor queries $X \rightarrow Y$ within the same video be $(t^X_i, s^X_i)$ and $(t^Y_j, s^Y_j)$. We compute temporal distance and blended visual similarity:
-$$D^{XY}_{ij} = |t^X_i - t^Y_j|, \quad B^{XY}_{ij} = w_A s^X_i + (1 - w_A) s^Y_j$$
+Let candidate hit sets for neighbor queries $X \rightarrow Y$ within the same video be $(t^X_i, s^X_i)$ and $(t^Y_j, s^Y_j)$. We compute temporal distance and blended visual similarity:
+
+$$
+D^{XY}_{ij} = |t^X_i - t^Y_j|, \quad B^{XY}_{ij} = w_A s^X_i + (1 - w_A) s^Y_j
+$$
 
 A distance penalty function $\phi(d)$ enforces narrative continuity:
-$$\phi_{\exp}(d) = 1 - e^{-\gamma d / \alpha}, \quad \text{or} \quad \phi_{\text{sqrt}}(d) = \min\left(\sqrt{1 + \left(\frac{\beta d}{\alpha}\right)^2} - 1, 1\right)$$
+
+$$
+\phi_{\exp}(d) = 1 - e^{-\gamma d / \alpha}, \quad \text{or} \quad \phi_{\text{sqrt}}(d) = \min\left(\sqrt{1 + \left(\frac{\beta d}{\alpha}\right)^2} - 1, 1\right)
+$$
 
 The temporal affinity matrix $M^{XY}_{ij}$ is computed and hard-truncated at $T_{\max}$:
-$$M^{XY}_{ij} = B^{XY}_{ij} \left(1 - \lambda \phi(D^{XY}_{ij})\right) \quad \text{for } D^{XY}_{ij} < T_{\max}, \quad \text{else } 0$$
+
+$$
+M^{XY}_{ij} = 
+\begin{cases} 
+B^{XY}_{ij} \left(1 - \lambda \phi(D^{XY}_{ij})\right) & \text{if } D^{XY}_{ij} < T_{\max} \\ 
+0 & \text{if } D^{XY}_{ij} \ge T_{\max} 
+\end{cases}
+$$
 
 #### Global Chain Rewiring ($B \rightarrow C$ Bridge)
 When third event $C$ arrives, the algorithm does not merely extend locally; it finds the optimal global bridge:
-$$(u^*, v^*) = \arg\max_{u,v} M^{BC}_{uv}, \quad L^{BC} = \max_{u,v} M^{BC}_{uv}$$
+
+$$
+(u^*, v^*) = \arg\max_{u,v} M^{BC}_{uv}, \quad L^{BC} = \max_{u,v} M^{BC}_{uv}
+$$
+
 The confidence score of $A_i$ is revised using the global bridge strength:
-$$r^{A \rightarrow B^*}_i = \left[w_A \tilde{s}^A_i + (1 - w_A) \tilde{s}^B_{u^*}\right] \left(1 - \lambda \phi(|t^A_i - t^B_{u^*}|)\right)$$
-$$\tilde{s}^A_i \leftarrow \frac{1}{3}\left(\tilde{s}^A_i + r^{A \rightarrow B^*}_i + L^{BC}\right)$$
+
+$$
+r^{A \rightarrow B^*}_i = \left[w_A \tilde{s}^A_i + (1 - w_A) \tilde{s}^B_{u^*}\right] \left(1 - \lambda \phi(|t^A_i - t^B_{u^*}|)\right)
+$$
+
+$$
+\tilde{s}^A_i \leftarrow \frac{1}{3}\left(\tilde{s}^A_i + r^{A \rightarrow B^*}_i + L^{BC}\right)
+$$
+
 This ensures that late arriving information **actively refines and re-orders earlier event matches**.
 
 ---
@@ -224,15 +248,23 @@ In fixed-camera traffic surveillance (CCTV, Subset N), appearance-based keyframe
 - **Tracklet Extraction:** Vehicles detected across consecutive frames are associated using **ByteTrack**. Ground-contact points (bottom-edge bounding box midpoint) are mapped relative to an automatically inferred background road topology.
 - **Action Vocabulary:** Tracklets are converted into symbolic sequences: $\mathcal{A} \in \{\text{stop}, \text{go straight}, \text{turn left}, \text{turn right}, \text{U-turn}\}$.
 - **Score Boosting / Filtering:**
-  $$S(f \mid q) = S_{\text{sem}}(f, q_{\text{sem}}) + \lambda B(f, q_{\text{trk}})$$
-  Where $B(f, q_{\text{trk}}) = 1$ if keyframe $f$ falls inside the matched traffic maneuver interval. **Result: Improves median target rank on turning queries by $\sim 8\times$ (from rank 13,068 down to 3,013).**
+
+$$
+S(f \mid q) = S_{\text{sem}}(f, q_{\text{sem}}) + \lambda B(f, q_{\text{trk}})
+$$
+
+Where $B(f, q_{\text{trk}}) = 1$ if keyframe $f$ falls inside the matched traffic maneuver interval. **Result: Improves median target rank on turning queries by $\sim 8\times$ (from rank 13,068 down to 3,013).**
 
 ---
 
 <a id="45-composed-image-retrieval-cir"></a>
 ### 4.5. Composed Image Retrieval (CIR)
 Allows operators to interactively refine search results from a selected reference keyframe $I_{\text{ref}}$ using text instructions:
-$$d = \text{norm}(a - m), \quad q_{\text{cir}} = \text{norm}(r + s \cdot d)$$
+
+$$
+d = \text{norm}(a - m), \quad q_{\text{cir}} = \text{norm}(r + s \cdot d)
+$$
+
 where $r = f_{\text{img}}(I_{\text{ref}})$, $a$ represents concepts to add, and $m$ represents concepts to remove, with scale factor $s$.
 
 ---

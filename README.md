@@ -199,25 +199,25 @@ Instead of evaluating keyframes in isolation, the ingestion pipeline deploys a *
 When querying consecutive actions (e.g., `Event A: "open door"` &rarr; `Event B: "walk out"` &rarr; `Event C: "drive away"`), standard beam search or additive scoring often yields disjointed, temporally inconsistent frames. Our **Global Temporal Reranker** resolves this mathematically:
 
 #### Formalization
-Let candidate hit sets for neighbor queries $X \rightarrow Y$ within the same video be $(t^X_i, s^X_i)$ and $(t^Y_j, s^Y_j)$. We compute temporal distance and blended visual similarity:
+Let candidate hit sets for neighbor queries $X \rightarrow Y$ within the same video be $(t_{i}^{X}, s_{i}^{X})$ and $(t_{j}^{Y}, s_{j}^{Y})$. We compute temporal distance and blended visual similarity:
 
 $$
-D^{XY}_{ij} = |t^X_i - t^Y_j|, \quad B^{XY}_{ij} = w_A s^X_i + (1 - w_A) s^Y_j
+D_{ij}^{XY} = |t_{i}^{X} - t_{j}^{Y}|, \quad B_{ij}^{XY} = w_{A} s_{i}^{X} + (1 - w_{A}) s_{j}^{Y}
 $$
 
 A distance penalty function $\phi(d)$ enforces narrative continuity:
 
 $$
-\phi_{\exp}(d) = 1 - e^{-\gamma d / \alpha}, \quad \text{or} \quad \phi_{\text{sqrt}}(d) = \min\left(\sqrt{1 + \left(\frac{\beta d}{\alpha}\right)^2} - 1, 1\right)
+\phi_{\exp}(d) = 1 - e^{-\gamma d / \alpha}, \quad \text{or} \quad \phi_{\text{sqrt}}(d) = \min\left(\sqrt{1 + \left(\frac{\beta d}{\alpha}\right)^{2}} - 1, 1\right)
 $$
 
-The temporal affinity matrix $M^{XY}_{ij}$ is computed and hard-truncated at $T_{\max}$:
+The temporal affinity matrix $M_{ij}^{XY}$ is computed and hard-truncated at $T_{\max}$:
 
 $$
-M^{XY}_{ij} = 
+M_{ij}^{XY} = 
 \begin{cases} 
-B^{XY}_{ij} \left(1 - \lambda \phi(D^{XY}_{ij})\right) & \text{if } D^{XY}_{ij} < T_{\max} \\ 
-0 & \text{if } D^{XY}_{ij} \ge T_{\max} 
+B_{ij}^{XY} \left(1 - \lambda \phi(D_{ij}^{XY})\right) & \text{if } D_{ij}^{XY} < T_{\max} \\ 
+0 & \text{if } D_{ij}^{XY} \ge T_{\max} 
 \end{cases}
 $$
 
@@ -225,17 +225,17 @@ $$
 When third event $C$ arrives, the algorithm does not merely extend locally; it finds the optimal global bridge:
 
 $$
-(u^*, v^*) = \arg\max_{u,v} M^{BC}_{uv}, \quad L^{BC} = \max_{u,v} M^{BC}_{uv}
+(u^{*}, v^{*}) = \arg\max_{u,v} M_{uv}^{BC}, \quad L^{BC} = \max_{u,v} M_{uv}^{BC}
 $$
 
-The confidence score of $A_i$ is revised using the global bridge strength:
+The confidence score of $A_{i}$ is revised using the global bridge strength:
 
 $$
-r^{A \rightarrow B^*}_i = \left[w_A \tilde{s}^A_i + (1 - w_A) \tilde{s}^B_{u^*}\right] \left(1 - \lambda \phi(|t^A_i - t^B_{u^*}|)\right)
+r_{i}^{A \rightarrow B^{*}} = \left[w_{A} \tilde{s}_{i}^{A} + (1 - w_{A}) \tilde{s}_{u^{*}}^{B}\right] \left(1 - \lambda \phi(|t_{i}^{A} - t_{u^{*}}^{B}|)\right)
 $$
 
 $$
-\tilde{s}^A_i \leftarrow \frac{1}{3}\left(\tilde{s}^A_i + r^{A \rightarrow B^*}_i + L^{BC}\right)
+\tilde{s}_{i}^{A} \leftarrow \frac{1}{3}\left(\tilde{s}_{i}^{A} + r_{i}^{A \rightarrow B^{*}} + L^{BC}\right)
 $$
 
 This ensures that late arriving information **actively refines and re-orders earlier event matches**.

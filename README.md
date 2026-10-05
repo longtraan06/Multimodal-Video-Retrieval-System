@@ -25,7 +25,7 @@
 
 - [1. Executive Summary](#1-executive-summary)
 - [2. System Capabilities & Interactive Demos](#2-system-capabilities--interactive-demos)
-  - [2.1. Real-Time Multimodal Semantic Search](#21-real-time-multimodal-semantic-search)
+  - [2.1. Real-Time Multimodal Search Flow](#21-real-time-multimodal-semantic-search)
   - [2.2. Operator Control Console & Feature Matrix](#22-operator-control-console--feature-matrix)
   - [2.3. Temporal Keyframe Inspection & Context Scrubbing](#23-temporal-keyframe-inspection--context-scrubbing)
   - [2.4. Frame-Accurate Video Playback Verification](#24-frame-accurate-video-playback-verification)

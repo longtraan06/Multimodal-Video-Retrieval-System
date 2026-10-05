@@ -225,7 +225,7 @@ $$
 When a third sequential event arrives, the algorithm does not merely extend locally; it identifies the optimal global bridge between events:
 
 $$
-(u^*, v^*) = \arg\max_{u,v} M_{uv}^{BC}, \quad L^{BC} = \max_{u,v} M_{uv}^{BC}
+(u^\ast, v^\ast) = \arg\max_{u,v} M_{uv}^{BC}, \quad L^{BC} = \max_{u,v} M_{uv}^{BC}
 $$
 
 The confidence score of candidate $A_{i}$ is revised by linking to candidate $B_{u}$ and incorporating the bridge strength $L^{BC}$:
@@ -283,8 +283,8 @@ Sub-second retrieval (0.1s - 0.3s) over 1,196,413 keyframes requires a zero-bott
 
 | System Layer | Architectural Decision & Optimization | Engineering Result |
 | :--- | :--- | :--- |
-| **Milvus Vector DB** | Standalone deployment with Cosine distance indexing (`HNSW` graph optimization). | Vector lookups completed in **$\le$ 35ms** across 1.2M high-dimensional embeddings. |
-| **Redis Cache Tier** | MD5 query hash caching, embedding vector cache, and intermediate ranking caches. | Instant cache-hit response in **$<$ 15ms** for repetitive and operator-refined queries. |
+| **Milvus Vector DB** | Standalone deployment with Cosine distance indexing (`HNSW` graph optimization). | Vector lookups completed in **under 35ms** across 1.2M high-dimensional embeddings. |
+| **Redis Cache Tier** | MD5 query hash caching, embedding vector cache, and intermediate ranking caches. | Instant cache-hit response in **under 15ms** for repetitive and operator-refined queries. |
 | **State Snapshot Rollback** | Redis-backed session snapshots record operator state per query turn. | Operators can **undo/rollback** any search step in 1 click without re-executing pipelines. |
 | **Nginx Direct Offloading** | Nginx serves static `.jpg` thumbnails and video chunks directly from disk with `sendfile`, `tcp_nopush`, and browser Cache-Control headers. | Bypasses Python ASGI worker queue; maintains line-speed image delivery under high concurrency. |
 | **Collaborative Teamwork** | Real-time WebSocket synchronization powered by **Redis Pub/Sub**. | Multi-operator teams share live queries, pinboards, and verification workflows with zero conflict. |

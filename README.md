@@ -221,21 +221,21 @@ B_{ij}^{XY} \left(1 - \lambda \phi(D_{ij}^{XY})\right) & \text{if } D_{ij}^{XY} 
 \end{cases}
 $$
 
-#### Global Chain Rewiring ($B \rightarrow C$ Bridge)
-When third event $C$ arrives, the algorithm does not merely extend locally; it finds the optimal global bridge:
+#### Global Chain Rewiring (Event Chain Relinking)
+When a third sequential event arrives, the algorithm does not merely extend locally; it identifies the optimal global bridge between events:
 
 $$
-(u^{*}, v^{*}) = \arg\max_{u,v} M_{uv}^{BC}, \quad L^{BC} = \max_{u,v} M_{uv}^{BC}
+(u^*, v^*) = \arg\max_{u,v} M_{uv}^{BC}, \quad L^{BC} = \max_{u,v} M_{uv}^{BC}
 $$
 
-The confidence score of $A_{i}$ is revised using the global bridge strength:
+The confidence score of candidate $A_{i}$ is revised by linking to candidate $B_{u}$ and incorporating the bridge strength $L^{BC}$:
 
 $$
-r_{i}^{A \rightarrow B^{*}} = \left[w_{A} \tilde{s}_{i}^{A} + (1 - w_{A}) \tilde{s}_{u^{*}}^{B}\right] \left(1 - \lambda \phi(|t_{i}^{A} - t_{u^{*}}^{B}|)\right)
+r_{i}^{A \to B} = \left[w_{A} \tilde{s}_{i}^{A} + (1 - w_{A}) \tilde{s}_{u}^{B}\right] \left(1 - \lambda \phi(|t_{i}^{A} - t_{u}^{B}|)\right)
 $$
 
 $$
-\tilde{s}_{i}^{A} \leftarrow \frac{1}{3}\left(\tilde{s}_{i}^{A} + r_{i}^{A \rightarrow B^{*}} + L^{BC}\right)
+\tilde{s}_{i}^{A} \leftarrow \frac{1}{3}\left(\tilde{s}_{i}^{A} + r_{i}^{A \to B} + L^{BC}\right)
 $$
 
 This ensures that late arriving information **actively refines and re-orders earlier event matches**.

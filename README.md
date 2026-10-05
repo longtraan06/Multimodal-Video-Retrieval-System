@@ -72,8 +72,8 @@ As the **Full-stack AI Retrieval System Engineer**, I owned the entire lifecycle
 
 The system was engineered from the ground up for high-tempo search operations, giving operators immediate visual and auditory verification mechanisms across 1.19M+ frames.
 
-<a id="21-real-time-multimodal-semantic-search"></a>
-### 2.1. Real-Time Multimodal Semantic Search
+<a id="21-real-time-multimodal-search-flow"></a>
+### 2.1. Real-Time Multimodal Search Flow
 
 The search engine executes sub-second queries (0.1s - 0.3s) over 1,196,413 keyframes, rendering instant 6-column result grids with synchronized previews.
 
